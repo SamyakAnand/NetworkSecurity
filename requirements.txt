@@ -2,6 +2,7 @@ python-dotenv
 pandas 
 numpy
 matplotlib
-pymongo
+
+pymongo[srv]
 certifi
 #-e .
