@@ -1,15 +1,17 @@
+import pymongo
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
-from pymongo.mongo_client import MongoClient
-from pymongo.server_api import ServerApi
+client = pymongo.MongoClient(os.getenv("MONGO_DB_URL"))
+db = client["NetworkSecurity"]  # or whatever your DB name is
+collection = db["NetworkData"]  # or whatever your collection name is
 
-uri = "mongodb+srv://samyakganand:<password>@cluster0.vvmddto.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+count = collection.count_documents({})
+print(f"📦 Total documents in collection: {count}")
 
-# Create a new client and connect to the server
-client = MongoClient(uri, server_api=ServerApi('1'))
-
-# Send a ping to confirm a successful connection
-try:
-    client.admin.command('ping')
-    print("Pinged your deployment. You successfully connected to MongoDB!")
-except Exception as e:
-    print(e)
+if count > 0:
+    for doc in collection.find().limit(5):
+        print(doc)
+else:
+    print("⚠️ Your MongoDB collection is empty.")
