@@ -4,7 +4,7 @@ from networksecurity.logging.logger import logging
 
 ## configuration of the Data Ingestion Config
 
-from networksecurity.entity.config_entity import DataIngestionConfig
+from networksecurity.entity.config_entity import DataIngestionConfig,DataValidationConfig
 from networksecurity.entity.artifact_entity import DataIngestionArtifact,DataValidationArtifact
 import os
 import sys
@@ -17,9 +17,9 @@ from sklearn.model_selection import train_test_split
 from scipy.stats import ks_2samp
 
 from networksecurity.constant.training_pipeline import SCHEMA_FILE_PATH
-from networksecurity.utils.main_utils.utils import read_yaml_file
+from networksecurity.utils.main_utils.utils import read_yaml_file,write_yaml_file
 class DataValidation:
-    def __init__(self,data_ingestion_artifact:DataIngestionArtifact,data_validation_config:DataIngestionConfig):
+    def __init__(self,data_ingestion_artifact:DataIngestionArtifact,data_validation_config:DataValidationConfig):
         try:
             self.data_ingestion_artifact=data_ingestion_artifact
             self.data_validation_config=data_validation_config
@@ -69,6 +69,7 @@ class DataValidation:
                 #create directory
                 dir_path=os.path.dirname(drift_report_file_path)
                 os.makedirs(dir_path,exist_ok=True)
+                write_yaml_file(file_path=drift_report_file_path,content=report)
         except Exception as e:
             raise NetworkSecurityException(e,sys)
     
@@ -86,12 +87,32 @@ class DataValidation:
             #validate number of columns
             status=self.validate_number_of_columns(dataframe=train_dataframe)
             if not status:
-                error_message=f"{error_message}Train dataframes does not contain all columns.\n"
+                error_message=f"Train dataframes does not contain all columns.\n"
             status=self.validate_number_of_columns(dataframe=test_dataframe)
    
             if not status:
-                error_message=f"{error_message}Test dataframes does not contain all columns.\n"
+                error_message=f"Test dataframes does not contain all columns.\n"
                 
-                #lets check 
+            
+                #lets check datadrift
+                status=self.detect_dataset_drift(base_df=train_dataframe,current_df=test_dataframe)
+                dir_path=os.path.dirname(self.data_validation_config.valid_train_file_path)
+                os.makedirs(dir_path,exist_ok=True)
+                
+                train_dataframe.to_csv(
+                    self.data_validation_config.valid_train_file_path,index=False,header=True
+                )
+                test_dataframe.to_csv(
+                    self.data_validation_config.valid_test_file_path,index=False,header=True
+                )
+                data_validation_artifact=DataValidationArtifact(
+                    validation_status=status,
+                    valid_train_file_path=self.data_ingestion_artifact.trained_file_path,
+                    valid_test_file_path=self.data_ingestion_artifact.test_file_path,
+                    invalid_train_file_path=None,
+                    invalid_test_file_path=None,
+                    drift_report_file_path=self.data_validation_config.drift_report_file_path,
+                )
+                return data_validation_artifact
         except Exception as e:
             raise NetworkSecurityException(e,sys)
