@@ -53,7 +53,7 @@ DATA_TRANSFORMATION_IMPUTER_PARAMS:dict={
     "weights":'uniform',
 }
 
-""" Model trainer related constant start woth mode trainer VAR NAME"""
+""" Model trainer related constant start with model trainer VAR NAME"""
 MODEL_TRAINER_DIR_NAME : str="model_trainer"
 MODEL_TRAINER_TRAINED_MODEL_DIR:str='trained_model'
 
