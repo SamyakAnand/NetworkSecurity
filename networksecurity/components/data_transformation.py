@@ -15,11 +15,11 @@ from networksecurity.entity.config_entity import DataTransformationConfig
 from networksecurity.utils.main_utils.utils import save_numpy_array_data,save_object
 
 class DataTransformation:
-    def __init__(self,data_validation_atifact:DataValidationArtifact,
-                 data_tranformation_config:DataTransformationConfig):
+    def __init__(self,data_validation_artifact:DataValidationArtifact,
+                 data_transformation_config:DataTransformationConfig):
         try:
-            self.data_validation_artifact:DataValidationArtifact=data_validation_atifact
-            self.data_transformation_config:DataTransformationConfig=data_tranformation_config
+            self.data_validation_artifact:DataValidationArtifact=data_validation_artifact
+            self.data_transformation_config:DataTransformationConfig=data_transformation_config
         except Exception as e:
             raise NetworkSecurityException(e,sys)
     
@@ -84,6 +84,7 @@ class DataTransformation:
             save_numpy_array_data(self.data_transformation_config.transformed_test_file_path,array=test_arr)
             save_object(self.data_transformation_config.transformed_object_file_path,preprocessor_obj)
         
+            save_object("final_models/preprocessor.pkl",preprocessor_obj)
             #preparing artifacts
             
             data_transformation_artifact=DataTransformationArtifact(
