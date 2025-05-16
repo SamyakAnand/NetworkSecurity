@@ -60,7 +60,7 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
 
-  Continuous-Deployment:
+    Continuous-Deployment:
     name: Continuous Deployment
     needs: build-and-push-ecr-image
     runs-on: self-hosted
@@ -83,10 +83,16 @@ jobs:
         run: |
           docker pull ${{ secrets.AWS_ECR_LOGIN_URI }}/${{ secrets.ECR_REPOSITORY_NAME }}:latest
 
-      # Optional: Stop and remove the existing container if already running
       - name: Stop and Remove Existing Container (if running)
         run: |
-          docker ps -q --filter "name=networksecurity" | grep -q . && docker stop networksecurity && docker rm -fv networksecurity || echo "No existing container to stop"
+          CONTAINER_ID=$(docker ps -aqf "name=networksecurity")
+          if [ -n "$CONTAINER_ID" ]; then
+            echo "Stopping and removing existing container..."
+            docker stop $CONTAINER_ID
+            docker rm -fv $CONTAINER_ID
+          else
+            echo "No existing container to stop."
+          fi
 
       - name: Run Docker Image to serve users
         run: |
