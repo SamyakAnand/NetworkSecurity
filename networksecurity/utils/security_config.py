@@ -1,5 +1,7 @@
 """Security-related environment configuration helpers."""
 
+import os
+from collections.abc import Mapping
 from urllib.parse import urlsplit
 
 
@@ -42,3 +44,21 @@ def parse_cors_origins(raw_origins: str | None) -> list[str]:
             allowed_origins.append(normalized)
 
     return allowed_origins
+
+
+def resolve_mongo_db_url(environ: Mapping[str, str] | None = None) -> str:
+    """Resolve the MongoDB URL, preferring the current name over its legacy alias.
+
+    The environment mapping is injectable so precedence and missing-configuration
+    behavior can be tested without changing the process environment.
+    """
+    values = os.environ if environ is None else environ
+    for variable in ("MONGO_DB_URL", "MONGODB_URL_KEY"):
+        value = values.get(variable, "").strip()
+        if value:
+            return value
+
+    raise RuntimeError(
+        "Set MONGO_DB_URL before running MongoDB-backed ingestion "
+        "(MONGODB_URL_KEY is accepted for backward compatibility)."
+    )
