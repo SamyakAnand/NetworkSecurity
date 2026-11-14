@@ -1,6 +1,9 @@
 import unittest
 
-from networksecurity.utils.security_config import parse_cors_origins
+from networksecurity.utils.security_config import (
+    parse_cors_origins,
+    resolve_mongo_db_url,
+)
 
 
 class ParseCorsOriginsTests(unittest.TestCase):
@@ -33,6 +36,42 @@ class ParseCorsOriginsTests(unittest.TestCase):
             with self.subTest(value=value):
                 with self.assertRaises(ValueError):
                     parse_cors_origins(value)
+
+
+class ResolveMongoDbUrlTests(unittest.TestCase):
+    def test_prefers_current_variable(self):
+        self.assertEqual(
+            resolve_mongo_db_url(
+                {
+                    "MONGO_DB_URL": " mongodb://primary ",
+                    "MONGODB_URL_KEY": "mongodb://legacy",
+                }
+            ),
+            "mongodb://primary",
+        )
+
+    def test_accepts_legacy_variable_when_current_one_is_missing(self):
+        self.assertEqual(
+            resolve_mongo_db_url({"MONGODB_URL_KEY": " mongodb://legacy "}),
+            "mongodb://legacy",
+        )
+
+    def test_uses_legacy_variable_when_current_one_is_blank(self):
+        self.assertEqual(
+            resolve_mongo_db_url(
+                {
+                    "MONGO_DB_URL": "  ",
+                    "MONGODB_URL_KEY": "mongodb://legacy",
+                }
+            ),
+            "mongodb://legacy",
+        )
+
+    def test_requires_a_non_blank_url(self):
+        for values in ({}, {"MONGO_DB_URL": " "}, {"MONGODB_URL_KEY": ""}):
+            with self.subTest(values=values):
+                with self.assertRaisesRegex(RuntimeError, "Set MONGO_DB_URL"):
+                    resolve_mongo_db_url(values)
 
 
 if __name__ == "__main__":
